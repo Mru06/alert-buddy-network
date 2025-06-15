@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Help-Circle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 interface EmergencySettingsProps {
   onSettingsChange?: (settings: any) => void;
@@ -47,7 +47,7 @@ const EmergencySettings: React.FC<EmergencySettingsProps> = ({ onSettingsChange 
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="bg-gray-800 border-gray-600 text-white">
-          <Help-Circle className="w-4 h-4 mr-2" />
+          <HelpCircle className="w-4 h-4 mr-2" />
           Settings
         </Button>
       </DialogTrigger>

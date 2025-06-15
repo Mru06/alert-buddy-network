@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, Mic-Off } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
 
 interface VoiceTriggerProps {
   onTrigger: () => void;
@@ -116,7 +116,7 @@ const VoiceTrigger: React.FC<VoiceTriggerProps> = ({ onTrigger, isActive }) => {
           </div>
         ) : (
           <div className="flex items-center gap-2 text-gray-400">
-            <Mic-Off className="w-6 h-6" />
+            <MicOff className="w-6 h-6" />
             <span>Voice detection starting...</span>
           </div>
         )}

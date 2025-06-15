@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Phone, User, Circle-X } from "lucide-react";
+import { Plus, Phone, User, CircleX } from "lucide-react";
 
 interface EmergencyContact {
   id: string;
@@ -142,7 +142,7 @@ const EmergencyContacts: React.FC<EmergencyContactsProps> = ({
                 size="sm"
                 className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
               >
-                <Circle-X className="w-4 h-4" />
+                <CircleX className="w-4 h-4" />
               </Button>
             </div>
           ))}

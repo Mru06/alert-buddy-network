@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Mic, Stop-Circle } from "lucide-react";
+import { Phone, MapPin, Mic, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface EmergencyContact {
@@ -300,7 +300,7 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
               variant="outline"
               className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
             >
-              <Stop-Circle className="w-4 h-4 mr-2" />
+              <StopCircle className="w-4 h-4 mr-2" />
               Stop Emergency Protocol
             </Button>
           </div>
