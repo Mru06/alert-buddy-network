@@ -22,7 +22,7 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
   location, 
   onCancel 
 }) => {
-  const [currentStep, setCurrentStep] = useState<'countdown' | 'recording' | 'alerting'>('countdown');
+  const [currentStep, setCurrentStep] = useState<'countdown' | 'active'>('countdown');
   const [countdown, setCountdown] = useState(5);
   const [currentContactIndex, setCurrentContactIndex] = useState(0);
   const [waitTime, setWaitTime] = useState(15);
@@ -38,19 +38,21 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
       }, 1000);
       return () => clearTimeout(timer);
     } else if (currentStep === 'countdown' && countdown === 0) {
-      setCurrentStep('recording');
+      setCurrentStep('active');
+      // Start both recording and calling simultaneously
       startRecording();
+      alertCurrentContact();
     }
   }, [currentStep, countdown]);
 
   // Wait time for contact response
   useEffect(() => {
-    if (currentStep === 'alerting' && waitTime > 0) {
+    if (currentStep === 'active' && waitTime > 0) {
       const timer = setTimeout(() => {
         setWaitTime(waitTime - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (currentStep === 'alerting' && waitTime === 0) {
+    } else if (currentStep === 'active' && waitTime === 0) {
       escalateToNextContact();
     }
   }, [currentStep, waitTime]);
@@ -96,12 +98,10 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
       
       mediaRecorder.start();
       
-      // Stop recording after 30 seconds and move to alerting
+      // Stop recording after 30 seconds
       setTimeout(() => {
         mediaRecorder.stop();
         setIsRecording(false);
-        setCurrentStep('alerting');
-        alertCurrentContact();
       }, 30000);
       
     } catch (error) {
@@ -111,8 +111,6 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
         description: "Could not start audio recording",
         variant: "destructive"
       });
-      setCurrentStep('alerting');
-      alertCurrentContact();
     }
   };
 
@@ -218,33 +216,38 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
           </div>
         )}
 
-        {currentStep === 'recording' && (
+        {currentStep === 'active' && (
           <div className="space-y-6">
-            <div className="text-red-400">
-              <Mic className="w-16 h-16 mx-auto animate-pulse" />
-            </div>
-            <h2 className="text-2xl font-bold text-white">
-              Recording Emergency Audio
-            </h2>
-            <div className="text-xl font-mono text-red-400">
-              {formatTime(recordingTime)}
-            </div>
-            <p className="text-gray-300">
-              Speak clearly about your emergency...
-            </p>
-            <div className="text-sm text-gray-400">
-              Recording will stop automatically in {30 - recordingTime} seconds
-            </div>
-          </div>
-        )}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Recording Status */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <div className="text-red-400">
+                  <Mic className="w-8 h-8 mx-auto animate-pulse" />
+                </div>
+                <div className="text-sm font-bold text-white mt-2">
+                  Recording
+                </div>
+                <div className="text-lg font-mono text-red-400">
+                  {formatTime(recordingTime)}
+                </div>
+              </div>
 
-        {currentStep === 'alerting' && (
-          <div className="space-y-6">
-            <div className="text-yellow-400">
-              <Phone className="w-16 h-16 mx-auto animate-bounce" />
+              {/* Calling Status */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <div className="text-yellow-400">
+                  <Phone className="w-8 h-8 mx-auto animate-bounce" />
+                </div>
+                <div className="text-sm font-bold text-white mt-2">
+                  Calling
+                </div>
+                <div className="text-lg font-mono text-yellow-400">
+                  {waitTime}s
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-white">
-              Alerting Emergency Contact
+
+            <h2 className="text-xl font-bold text-white">
+              Emergency Protocol Active
             </h2>
             
             {currentContact ? (
@@ -259,10 +262,6 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
                   <div className="text-sm text-gray-400">
                     Priority {currentContact.priority}
                   </div>
-                </div>
-                
-                <div className="text-xl font-mono text-yellow-400">
-                  Response timeout: {waitTime}s
                 </div>
                 
                 {location && (
