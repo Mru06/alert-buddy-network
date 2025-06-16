@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, Mic, StopCircle } from "lucide-react";
@@ -86,52 +85,51 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         
-        // Save recording to localStorage
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          try {
-            const base64 = reader.result as string;
-            const timestamp = new Date().toISOString();
-            const recordingData = {
-              data: base64,
-              timestamp: timestamp,
-              duration: recordingTime,
-              type: 'audio/webm'
-            };
-            
-            localStorage.setItem('emergencyRecording', JSON.stringify(recordingData));
-            console.log('Recording saved successfully:', {
-              size: base64.length,
-              timestamp: timestamp,
-              duration: recordingTime
-            });
-            
-            toast({
-              title: "Recording Saved",
-              description: `Emergency audio recorded for ${recordingTime}s`,
-              variant: "default"
-            });
-            
-          } catch (error) {
-            console.error('Error saving recording:', error);
-            toast({
-              title: "Save Error",
-              description: "Could not save recording to storage",
-              variant: "destructive"
-            });
-          }
-        };
+        // Create download link for the audio file
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `emergency-recording-${timestamp}.webm`;
         
-        reader.onerror = () => {
-          console.error('FileReader error');
-          toast({
-            title: "Recording Error",
-            description: "Could not process recording",
-            variant: "destructive"
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Also save metadata to localStorage for reference
+        try {
+          const recordingMetadata = {
+            filename: filename,
+            timestamp: new Date().toISOString(),
+            duration: recordingTime,
+            type: 'audio/webm',
+            saved: 'downloads'
+          };
+          
+          localStorage.setItem('emergencyRecordingMetadata', JSON.stringify(recordingMetadata));
+          console.log('Recording downloaded successfully:', {
+            filename: filename,
+            duration: recordingTime,
+            location: 'downloads'
           });
-        };
-        
-        reader.readAsDataURL(blob);
+          
+          toast({
+            title: "Recording Downloaded",
+            description: `Emergency audio saved as ${filename}`,
+            variant: "default"
+          });
+          
+        } catch (error) {
+          console.error('Error saving recording metadata:', error);
+          toast({
+            title: "Recording Saved",
+            description: "Audio downloaded but metadata save failed",
+            variant: "default"
+          });
+        }
         
         // Clean up stream
         stream.getTracks().forEach(track => track.stop());
@@ -269,14 +267,14 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
                   <Mic className="w-8 h-8 mx-auto animate-pulse" />
                 </div>
                 <div className="text-sm font-bold text-white mt-2">
-                  {isRecording ? 'Recording' : 'Saved'}
+                  {isRecording ? 'Recording' : 'Downloaded'}
                 </div>
                 <div className="text-lg font-mono text-red-400">
                   {formatTime(recordingTime)}
                 </div>
                 {!isRecording && recordingTime > 0 && (
                   <div className="text-xs text-green-400 mt-1">
-                    ✓ Saved locally
+                    ✓ Saved to downloads
                   </div>
                 )}
               </div>
