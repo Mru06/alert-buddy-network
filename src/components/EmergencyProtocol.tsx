@@ -28,6 +28,7 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
   const [waitTime, setWaitTime] = useState(15);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const { toast } = useToast();
 
   // Countdown timer for cancellation
@@ -73,42 +74,85 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
       setIsRecording(true);
       
       // Start MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
       
-      mediaRecorder.ondataavailable = (e) => {
-        chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
       };
       
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
-        const url = URL.createObjectURL(blob);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
         
-        // Save recording to localStorage (as base64)
+        // Save recording to localStorage
         const reader = new FileReader();
         reader.onloadend = () => {
-          const base64 = reader.result as string;
-          localStorage.setItem('emergencyRecording', base64);
-          console.log('Recording saved locally');
+          try {
+            const base64 = reader.result as string;
+            const timestamp = new Date().toISOString();
+            const recordingData = {
+              data: base64,
+              timestamp: timestamp,
+              duration: recordingTime,
+              type: 'audio/webm'
+            };
+            
+            localStorage.setItem('emergencyRecording', JSON.stringify(recordingData));
+            console.log('Recording saved successfully:', {
+              size: base64.length,
+              timestamp: timestamp,
+              duration: recordingTime
+            });
+            
+            toast({
+              title: "Recording Saved",
+              description: `Emergency audio recorded for ${recordingTime}s`,
+              variant: "default"
+            });
+            
+          } catch (error) {
+            console.error('Error saving recording:', error);
+            toast({
+              title: "Save Error",
+              description: "Could not save recording to storage",
+              variant: "destructive"
+            });
+          }
         };
+        
+        reader.onerror = () => {
+          console.error('FileReader error');
+          toast({
+            title: "Recording Error",
+            description: "Could not process recording",
+            variant: "destructive"
+          });
+        };
+        
         reader.readAsDataURL(blob);
         
+        // Clean up stream
         stream.getTracks().forEach(track => track.stop());
       };
       
-      mediaRecorder.start();
+      recorder.start();
+      setMediaRecorder(recorder);
       
       // Stop recording after 30 seconds
       setTimeout(() => {
-        mediaRecorder.stop();
-        setIsRecording(false);
+        if (recorder.state === 'recording') {
+          recorder.stop();
+          setIsRecording(false);
+        }
       }, 30000);
       
     } catch (error) {
       console.error('Error starting recording:', error);
       toast({
         title: "Recording Error",
-        description: "Could not start audio recording",
+        description: "Could not start audio recording. Please check microphone permissions.",
         variant: "destructive"
       });
     }
@@ -225,11 +269,16 @@ const EmergencyProtocol: React.FC<EmergencyProtocolProps> = ({
                   <Mic className="w-8 h-8 mx-auto animate-pulse" />
                 </div>
                 <div className="text-sm font-bold text-white mt-2">
-                  Recording
+                  {isRecording ? 'Recording' : 'Saved'}
                 </div>
                 <div className="text-lg font-mono text-red-400">
                   {formatTime(recordingTime)}
                 </div>
+                {!isRecording && recordingTime > 0 && (
+                  <div className="text-xs text-green-400 mt-1">
+                    ✓ Saved locally
+                  </div>
+                )}
               </div>
 
               {/* Calling Status */}
